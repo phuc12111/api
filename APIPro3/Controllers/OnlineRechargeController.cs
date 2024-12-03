@@ -1,4 +1,6 @@
 ﻿using APIPro3.Entities;
+using APIPro3.Models;
+using APIPro3.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,10 +11,12 @@ namespace APIPro3.Controllers
     public class OnlineRechargeController : ControllerBase
     {
         private readonly RechargeOnlineSystemContext _context;
+        private readonly IVnPayService _vnPayService;
 
-        public OnlineRechargeController(RechargeOnlineSystemContext context)
+        public OnlineRechargeController(RechargeOnlineSystemContext context, IVnPayService vnPayService)
         {
             _context = context;
+            _vnPayService = vnPayService;
         }
 
         // GET: api/OnlineRecharge
@@ -23,8 +27,8 @@ namespace APIPro3.Controllers
             return Ok(recharges);
         }
 
-        [Authorize]
-        [HttpPost]
+        // POST: api/OnlineRecharge/create
+        [HttpPost("create")]
         public IActionResult Create([FromBody] OnlineRecharge recharge)
         {
             // Kiểm tra dữ liệu đầu vào
@@ -33,30 +37,35 @@ namespace APIPro3.Controllers
                 return BadRequest("Thông tin không hợp lệ.");
             }
 
-            // Lấy UserId từ token
+            // Mặc định UserId là null
+            int? userId = null;
+
+            // Lấy UserId từ token (nếu có)
             var userIdClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId");
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int parsedUserId))
             {
-                return Unauthorized("Không tìm thấy UserId trong token.");
+                userId = parsedUserId; // Gán giá trị từ token nếu có
             }
 
-            // Kiểm tra UserId có tồn tại trong bảng Users
-            var userExists = _context.Users.Any(u => u.UserId == userId);
-            if (!userExists)
-            {
-                return NotFound("Người dùng không tồn tại.");
-            }
-
-            // Tạo bản ghi nạp tiền trực tuyến mới
-            recharge.UserId = userId; // Gán UserId từ token
+            // Gán giá trị UserId (hoặc null nếu không có token)
+            recharge.UserId = userId;
             recharge.RechargeDate = DateTime.UtcNow;
 
+            // Lưu bản ghi vào cơ sở dữ liệu
             _context.OnlineRecharges.Add(recharge);
             _context.SaveChanges();
 
-            // Trả về thông tin nạp tiền đã tạo
-            return CreatedAtAction(nameof(GetAll), new { id = recharge.RechargeId }, recharge);
+            // Tạo link thanh toán
+            var paymentUrl = _vnPayService.CreateOnlineRechargetUrl(recharge, HttpContext);
+
+            // Trả về thông tin bản ghi đã lưu và link thanh toán
+            return Ok(new
+            {
+                rechargeId = recharge.RechargeId,
+                paymentUrl
+            });
         }
+
 
     }
 }

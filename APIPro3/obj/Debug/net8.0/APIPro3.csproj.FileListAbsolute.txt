@@ -167,3 +167,6 @@ E:\Project 3\APIPro3\APIPro3\obj\Debug\net8.0\refint\APIPro3.dll
 E:\Project 3\APIPro3\APIPro3\obj\Debug\net8.0\APIPro3.pdb
 E:\Project 3\APIPro3\APIPro3\obj\Debug\net8.0\APIPro3.genruntimeconfig.cache
 E:\Project 3\APIPro3\APIPro3\obj\Debug\net8.0\ref\APIPro3.dll
+E:\Project 3\APIPro3\APIPro3\obj\Debug\net8.0\APIPro3.sourcelink.json
+E:\Project 3\APIPro3\APIPro3\bin\Debug\net8.0\Newtonsoft.Json.dll
+E:\Project 3\APIPro3\APIPro3\bin\Debug\net8.0\VNPayPackage.dll

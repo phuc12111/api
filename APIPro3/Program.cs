@@ -1,4 +1,5 @@
 ﻿using APIPro3.Entities;
+using APIPro3.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -14,6 +15,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<RechargeOnlineSystemContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("RechargeOnlineSystem")));
 
+builder.Services.AddScoped<IVnPayService, VnPayService>();
 
 
 var secretKey = builder.Configuration["JwtSettings:SecretKey"];
@@ -82,9 +84,9 @@ builder.Services.AddSwaggerGen(options =>
             new string[] {}
         }
     });
+
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "APIPro3", Version = "v1" });
 });
-
-
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
