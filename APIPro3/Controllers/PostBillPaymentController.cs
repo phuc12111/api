@@ -73,16 +73,37 @@ namespace APIPro3.Controllers
                 return NotFound("Người dùng không tồn tại.");
             }
 
+            // Lấy thông tin tài khoản của người dùng
+            var account = _context.Accounts.FirstOrDefault(a => a.UserId == userId);
+            if (account == null)
+            {
+                return NotFound("Tài khoản không tồn tại.");
+            }
+
+            // Kiểm tra số dư tài khoản
+            if (account.AccountBalance == null || account.AccountBalance < payment.Amount)
+            {
+                return BadRequest("Số dư tài khoản không đủ để thanh toán.");
+            }
+
+            // Trừ số tiền thanh toán từ số dư tài khoản
+            account.AccountBalance -= payment.Amount;
+            account.LastUpdated = DateTime.UtcNow;
+
             // Tạo thanh toán hóa đơn mới
             payment.UserId = userId; // Gán UserId từ token
             payment.PaymentDate = DateTime.UtcNow;
 
             _context.PostBillPayments.Add(payment);
+
+            // Cập nhật tài khoản vào cơ sở dữ liệu
+            _context.Accounts.Update(account);
             _context.SaveChanges();
 
             // Trả về thông tin thanh toán đã tạo
             return CreatedAtAction(nameof(GetById), new { id = payment.PaymentId }, payment);
         }
+
 
 
 

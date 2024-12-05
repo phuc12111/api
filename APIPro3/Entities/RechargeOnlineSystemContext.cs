@@ -152,6 +152,10 @@ public partial class RechargeOnlineSystemContext : DbContext
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("status");
+            entity.Property(e => e.Phone) 
+                .HasMaxLength(15) 
+                .IsUnicode(false)
+                .HasColumnName("phone");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.User).WithMany(p => p.OnlineRecharges)
@@ -290,6 +294,7 @@ public partial class RechargeOnlineSystemContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK__Transacti__user___5535A963");
         });
+
 
         modelBuilder.Entity<User>(entity =>
         {
