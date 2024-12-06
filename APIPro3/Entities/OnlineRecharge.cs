@@ -16,6 +16,7 @@ public partial class OnlineRecharge
     public DateTime? RechargeDate { get; set; }
 
     public string Status { get; set; } = null!;
+
     public string? Phone { get; set; }
 
     public virtual User? User { get; set; }

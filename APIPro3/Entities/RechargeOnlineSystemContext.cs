@@ -23,6 +23,8 @@ public partial class RechargeOnlineSystemContext : DbContext
 
     public virtual DbSet<Feedback> Feedbacks { get; set; }
 
+    public virtual DbSet<Invoice> Invoices { get; set; }
+
     public virtual DbSet<OnlineRecharge> OnlineRecharges { get; set; }
 
     public virtual DbSet<PostBillPayment> PostBillPayments { get; set; }
@@ -39,7 +41,7 @@ public partial class RechargeOnlineSystemContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=.;Initial Catalog=Recharge_Online_System;Integrated Security=True;Trust Server Certificate=True");
+        => optionsBuilder.UseSqlServer("Data Source=.;Initial Catalog=Recharge_Online_System;Integrated Security=True;Encrypt=True;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -130,6 +132,17 @@ public partial class RechargeOnlineSystemContext : DbContext
                 .HasConstraintName("FK__Feedback__user_i__47DBAE45");
         });
 
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.HasKey(e => e.InvoiceId).HasName("PK__Invoice__D796AAB5D3A00882");
+
+            entity.ToTable("Invoice");
+
+            entity.Property(e => e.InvoiceId).HasMaxLength(50);
+            entity.Property(e => e.Amount).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.Status).HasColumnName("status");
+        });
+
         modelBuilder.Entity<OnlineRecharge>(entity =>
         {
             entity.HasKey(e => e.RechargeId).HasName("PK__OnlineRe__D3CC5F61BDCFFCAD");
@@ -144,6 +157,9 @@ public partial class RechargeOnlineSystemContext : DbContext
                 .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("guest_identifier");
+            entity.Property(e => e.Phone)
+                .HasMaxLength(20)
+                .IsUnicode(false);
             entity.Property(e => e.RechargeDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
@@ -152,10 +168,6 @@ public partial class RechargeOnlineSystemContext : DbContext
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("status");
-            entity.Property(e => e.Phone) 
-                .HasMaxLength(15) 
-                .IsUnicode(false)
-                .HasColumnName("phone");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.User).WithMany(p => p.OnlineRecharges)
@@ -294,7 +306,6 @@ public partial class RechargeOnlineSystemContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK__Transacti__user___5535A963");
         });
-
 
         modelBuilder.Entity<User>(entity =>
         {
