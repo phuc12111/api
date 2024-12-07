@@ -59,6 +59,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 
 
+builder.Services.AddCors(p => p.AddPolicy("MyCors", builder =>
+{
+    builder.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
+}));
+
+
+
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -99,7 +106,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseCors("MyCors");
 // Sử dụng Authentication và Authorization
 app.UseAuthentication();  // Đảm bảo sử dụng Authentication
 app.UseAuthorization();   // Đảm bảo sử dụng Authorization
