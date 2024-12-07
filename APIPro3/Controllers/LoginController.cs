@@ -30,14 +30,14 @@ namespace APIPro3.Controllers
         [HttpPost("login")]
         public IActionResult Login([FromBody] UseRequestModel useRequestModel)
         {
-            if (string.IsNullOrEmpty(useRequestModel.UserName) || string.IsNullOrEmpty(useRequestModel.Password))
+            if (string.IsNullOrEmpty(useRequestModel.Email) || string.IsNullOrEmpty(useRequestModel.Password))
             {
                 return BadRequest("Username hoặc Password không thể để trống.");
             }
 
             // Kiểm tra thông tin đăng nhập từ cơ sở dữ liệu
             var user = _context.Users
-                .FirstOrDefault(u => u.Email == useRequestModel.UserName && u.Password == useRequestModel.Password);
+                .FirstOrDefault(u => u.Email == useRequestModel.Email && u.Password == useRequestModel.Password);
 
             if (user == null)
             {
@@ -105,7 +105,7 @@ namespace APIPro3.Controllers
         }
 
 
-        [HttpPost("create-user")]
+        [HttpPost("register")]
         public IActionResult CreateUser([FromBody] User userRequest)
         {
             // Kiểm tra tính hợp lệ của dữ liệu đầu vào
