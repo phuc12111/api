@@ -15,5 +15,5 @@ public partial class Account
 
     public virtual ICollection<AccountRingtone> AccountRingtones { get; set; } = new List<AccountRingtone>();
 
-    public virtual User User { get; set; } = null!;
+    public virtual User? User { get; set; }
 }
