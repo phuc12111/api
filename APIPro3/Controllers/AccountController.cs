@@ -89,5 +89,90 @@ namespace APIPro3.Controllers
             return CreatedAtAction(nameof(GetAll), new { id = newAccount.AccountId }, newAccount);
         }
 
+
+        [Authorize]
+        [HttpGet("get-account")]
+        public IActionResult GetAccountByUserId()
+        {
+            // Lấy UserId từ token (Claim)
+            var userId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("Không tìm thấy UserId trong token.");
+            }
+
+            // Tìm tài khoản theo UserId
+            var account = _context.Accounts.FirstOrDefault(a => a.UserId.ToString() == userId);
+
+            if (account == null)
+            {
+                return NotFound("Không tìm thấy tài khoản của người dùng.");
+            }
+
+            // Trả về thông tin tài khoản
+            return Ok(new
+            {
+                AccountId = account.AccountId,
+                UserId = account.UserId,
+                AccountBalance = account.AccountBalance,
+                LastUpdated = account.LastUpdated
+            });
+        }
+
+
+
+
+        [Authorize]
+        [HttpGet("get-user-and-account")]
+        public IActionResult GetUserAndAccount()
+        {
+            // Lấy UserId từ token (Claim)
+            var userId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("Không tìm thấy UserId trong token.");
+            }
+
+            // Tìm người dùng theo UserId
+            var user = _context.Users.FirstOrDefault(u => u.UserId.ToString() == userId);
+            if (user == null)
+            {
+                return NotFound("Không tìm thấy thông tin người dùng.");
+            }
+
+            // Tìm tài khoản theo UserId
+            var account = _context.Accounts.FirstOrDefault(a => a.UserId.ToString() == userId);
+            if (account == null)
+            {
+                return NotFound("Không tìm thấy tài khoản của người dùng.");
+            }
+
+            // Trả về thông tin người dùng và tài khoản
+            return Ok(new
+            {
+                User = new
+                {
+                    UserId = user.UserId,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    Role = user.Role,
+                    CreatedAt = user.CreatedAt,
+                    UpdatedAt = user.UpdatedAt
+                },
+                Account = new
+                {
+                    AccountId = account.AccountId,
+                    UserId = user.UserId,
+                    AccountBalance = account.AccountBalance,
+                    LastUpdated = account.LastUpdated
+                }
+            });
+        }
+
+
+
+
     }
 }
