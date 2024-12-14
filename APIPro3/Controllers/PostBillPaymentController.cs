@@ -232,5 +232,60 @@ namespace APIPro3.Controllers
 
 
 
+
+
+
+        [HttpGet("GetFullPaymentRevenueReport")]
+        public IActionResult GetFullPaymentRevenueReport()
+        {
+            // Lấy ngày đầu tiên và ngày cuối cùng trong bảng dữ liệu
+            var firstDate = _context.PostBillPayments
+                .Where(p => p.PaymentDate.HasValue)
+                .OrderBy(p => p.PaymentDate)
+                .Select(p => p.PaymentDate.Value.Date)
+                .FirstOrDefault();
+
+            var lastDate = _context.PostBillPayments
+                .Where(p => p.PaymentDate.HasValue)
+                .OrderByDescending(p => p.PaymentDate)
+                .Select(p => p.PaymentDate.Value.Date)
+                .FirstOrDefault();
+
+            if (firstDate == default || lastDate == default)
+            {
+                return NotFound("Không có dữ liệu giao dịch.");
+            }
+
+            // Tạo danh sách tất cả các ngày từ ngày đầu tiên đến ngày cuối cùng
+            var allDates = Enumerable.Range(0, (lastDate - firstDate).Days + 1)
+                .Select(offset => firstDate.AddDays(offset))
+                .ToList();
+
+            // Lấy doanh thu theo ngày
+            var revenueData = _context.PostBillPayments
+                .Where(p => p.PaymentDate.HasValue)
+                .GroupBy(p => p.PaymentDate.Value.Date)
+                .Select(g => new
+                {
+                    Date = g.Key,
+                    TotalRevenue = g.Sum(p => p.Amount)
+                })
+                .ToDictionary(r => r.Date, r => r.TotalRevenue);
+
+            // Tạo kết quả cuối cùng bao gồm các ngày không có doanh thu
+            var fullRevenueReport = allDates.Select(date => new
+            {
+                Date = date.ToString("yyyy-MM-dd"),
+                TotalRevenue = revenueData.ContainsKey(date) ? revenueData[date] : 0
+            })
+            .OrderBy(r => r.Date)
+            .ToList();
+
+            return Ok(fullRevenueReport);
+        }
+
+
+
+
     }
 }

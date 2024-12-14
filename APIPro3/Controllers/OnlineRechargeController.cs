@@ -165,5 +165,57 @@ namespace APIPro3.Controllers
 
 
 
+        [HttpGet("GetFullOnlineRechargeRevenueReport")]
+        public IActionResult GetFullOnlineRechargeRevenueReport()
+        {
+            // Lấy ngày đầu tiên và ngày cuối cùng trong bảng dữ liệu
+            var firstDate = _context.OnlineRecharges
+                .Where(r => r.RechargeDate.HasValue)
+                .OrderBy(r => r.RechargeDate)
+                .Select(r => r.RechargeDate.Value.Date)
+                .FirstOrDefault();
+
+            var lastDate = _context.OnlineRecharges
+                .Where(r => r.RechargeDate.HasValue)
+                .OrderByDescending(r => r.RechargeDate)
+                .Select(r => r.RechargeDate.Value.Date)
+                .FirstOrDefault();
+
+            if (firstDate == default || lastDate == default)
+            {
+                return NotFound("Không có dữ liệu giao dịch.");
+            }
+
+            // Tạo danh sách tất cả các ngày từ ngày đầu tiên đến ngày cuối cùng
+            var allDates = Enumerable.Range(0, (lastDate - firstDate).Days + 1)
+                .Select(offset => firstDate.AddDays(offset))
+                .ToList();
+
+            // Lấy doanh thu theo ngày
+            var revenueData = _context.OnlineRecharges
+                .Where(r => r.RechargeDate.HasValue)
+                .GroupBy(r => r.RechargeDate.Value.Date)
+                .Select(g => new
+                {
+                    Date = g.Key,
+                    TotalRevenue = g.Sum(r => r.Amount)
+                })
+                .ToDictionary(r => r.Date, r => r.TotalRevenue);
+
+            // Tạo kết quả cuối cùng bao gồm các ngày không có doanh thu
+            var fullRevenueReport = allDates.Select(date => new
+            {
+                Date = date.ToString("yyyy-MM-dd"),
+                TotalRevenue = revenueData.ContainsKey(date) ? revenueData[date] : 0
+            })
+            .OrderBy(r => r.Date)
+            .ToList();
+
+            return Ok(fullRevenueReport);
+        }
+
+
+
+
     }
 }
