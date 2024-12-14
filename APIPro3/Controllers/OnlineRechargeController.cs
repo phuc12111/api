@@ -135,5 +135,35 @@ namespace APIPro3.Controllers
                 paymentUrl
             });
         }
+
+
+
+
+        [HttpGet("GetRevenueReport")]
+        public IActionResult GetRevenueReport()
+        {
+            var revenueReport = _context.OnlineRecharges
+                .Where(r => r.RechargeDate.HasValue) // Lọc giao dịch có RechargeDate
+                .GroupBy(r => r.RechargeDate.Value.Date) // Nhóm theo ngày
+                .Select(g => new
+                {
+                    Date = g.Key, // Sử dụng kiểu DateTime
+                    TotalRevenue = g.Sum(r => r.Amount) // Tính tổng doanh thu
+                })
+                .AsEnumerable() // Chuyển sang xử lý phía client
+                .Select(r => new
+                {
+                    Date = r.Date.ToString("yyyy-MM-dd"), // Chuyển đổi sang chuỗi phía client
+                    r.TotalRevenue
+                })
+                .OrderBy(r => r.Date) // Sắp xếp theo ngày
+                .ToList();
+
+            return Ok(revenueReport);
+        }
+
+
+
+
     }
 }

@@ -207,6 +207,28 @@ namespace APIPro3.Controllers
         }
 
 
+        [HttpGet("GetPaymentRevenueReport")]
+        public IActionResult GetPaymentRevenueReport()
+        {
+            var paymentRevenueReport = _context.PostBillPayments
+                .Where(p => p.PaymentDate.HasValue) // Lọc giao dịch có PaymentDate
+                .GroupBy(p => p.PaymentDate.Value.Date) // Nhóm theo ngày
+                .Select(g => new
+                {
+                    Date = g.Key, // Sử dụng kiểu DateTime
+                    TotalRevenue = g.Sum(p => p.Amount) // Tính tổng doanh thu
+                })
+                .AsEnumerable() // Chuyển sang xử lý phía client
+                .Select(r => new
+                {
+                    Date = r.Date.ToString("yyyy-MM-dd"), // Chuyển đổi sang chuỗi phía client
+                    r.TotalRevenue
+                })
+                .OrderBy(r => r.Date) // Sắp xếp theo ngày
+                .ToList();
+
+            return Ok(paymentRevenueReport);
+        }
 
 
 
