@@ -39,26 +39,46 @@ namespace APIPro3.Controllers
 
             // Lấy UserId từ token
             var userIdClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId");
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            int? userId = null;
+
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int parsedUserId))
             {
-                return Unauthorized("Không tìm thấy UserId trong token.");
+                userId = parsedUserId;
             }
 
-            // Kiểm tra UserId có tồn tại trong bảng Users
-            var userExists = _context.Users.Any(u => u.UserId == userId);
-            if (!userExists)
+            if (userId.HasValue)
             {
-                return NotFound("Người dùng không tồn tại.");
+                // Kiểm tra UserId có tồn tại trong bảng Users
+                var userExists = _context.Users.Any(u => u.UserId == userId.Value);
+                if (!userExists)
+                {
+                    return NotFound("Người dùng không tồn tại.");
+                }
             }
 
             // Tạo phản hồi mới
-            feedback.UserId = userId; // Gán UserId từ token
+            if (userId.HasValue)
+            {
+                feedback.UserId = userId.Value; // Gán UserId từ token nếu tìm thấy
+            }
+            else
+            {
+                feedback.UserId = null; // Không tìm thấy UserId, để null
+                feedback.GuestIdentifier = "guest"; // Gán giá trị "guest" cho trường guest_identifier
+            }
+
             feedback.FeedbackDate = DateTime.UtcNow;
 
+            // Thêm phản hồi vào cơ sở dữ liệu
             _context.Feedbacks.Add(feedback);
             _context.SaveChanges();
 
             return CreatedAtAction(nameof(GetAll), new { id = feedback.FeedbackId }, feedback);
         }
+
+
+
+
+
     }
 }
