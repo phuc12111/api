@@ -147,5 +147,137 @@ namespace APIPro3.Controllers
 
 
 
+
+
+
+
+
+        [HttpGet("UserRegistrationStats")]
+        public IActionResult GetUserRegistrationStats()
+        {
+            var stats = _context.Users
+                .Where(u => u.CreatedAt.HasValue) // Loại bỏ các bản ghi có CreatedAt null
+                .GroupBy(u => u.CreatedAt.Value.Date) // Nhóm theo ngày
+                .Select(g => new
+                {
+                    Date = g.Key, // Lấy trực tiếp DateTime, xử lý định dạng sau
+                    UserCount = g.Count() // Đếm số lượng user
+                })
+                .AsEnumerable() // Chuyển sang xử lý phía client
+                .Select(g => new
+                {
+                    Date = g.Date.ToString("yyyy-MM-dd"), // Định dạng ngày thành chuỗi
+                    g.UserCount
+                })
+                .OrderBy(stat => stat.Date) // Sắp xếp theo ngày
+                .ToList();
+
+            return Ok(stats);
+        }
+
+
+
+
+
+
+        [HttpGet("GetUserRegistrationReport")]
+        public IActionResult GetUserRegistrationReport()
+        {
+            // Lấy ngày đầu tiên và ngày cuối cùng trong bảng dữ liệu
+            var firstDate = _context.Users
+                .OrderBy(u => u.CreatedAt)
+                .Select(u => u.CreatedAt.Value.Date)
+                .FirstOrDefault();
+
+            var lastDate = _context.Users
+                .OrderByDescending(u => u.CreatedAt)
+                .Select(u => u.CreatedAt.Value.Date)
+                .FirstOrDefault();
+
+            if (firstDate == default || lastDate == default)
+            {
+                return NotFound("Không có dữ liệu người dùng.");
+            }
+
+            // Tạo danh sách tất cả các ngày từ ngày đầu tiên đến ngày cuối cùng
+            var allDates = Enumerable.Range(0, (lastDate - firstDate).Days + 1)
+                .Select(offset => firstDate.AddDays(offset))
+                .ToList();
+
+            // Nhóm và đếm số lượng người dùng đăng ký mỗi ngày
+            var userRegistrations = _context.Users
+                .GroupBy(u => u.CreatedAt.Value.Date)
+                .Select(g => new
+                {
+                    Date = g.Key,
+                    UserCount = g.Count()
+                })
+                .ToDictionary(r => r.Date, r => r.UserCount);
+
+            // Tạo kết quả cuối cùng bao gồm các ngày không có đăng ký
+            var registrationReport = allDates.Select(date => new
+            {
+                Date = date.ToString("yyyy-MM-dd"),
+                UserCount = userRegistrations.ContainsKey(date) ? userRegistrations[date] : 0
+            })
+            .OrderBy(r => r.Date)
+            .ToList();
+
+            return Ok(registrationReport);
+        }
+
+
+
+
+        [Authorize]
+        [HttpPost("UpdateProfile")]
+        public IActionResult UpdateUserProfile([FromBody] UpdateUserProfileModel model)
+        {
+            // Lấy UserId từ token
+            var userIdClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return Unauthorized("Không tìm thấy UserId trong token.");
+            }
+
+            // Tìm người dùng dựa trên UserId
+            var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
+            if (user == null)
+            {
+                return NotFound("Người dùng không tồn tại.");
+            }
+
+            // Cập nhật thông tin cá nhân
+            if (!string.IsNullOrEmpty(model.UserName))
+                user.UserName = model.UserName;
+
+            if (!string.IsNullOrEmpty(model.Email))
+                user.Email = model.Email;
+
+            if (!string.IsNullOrEmpty(model.Phone))
+                user.Phone = model.Phone;
+
+            // Cập nhật ngày chỉnh sửa cuối cùng
+            user.UpdatedAt = DateTime.UtcNow;
+
+            // Lưu thay đổi
+            _context.Users.Update(user);
+            _context.SaveChanges();
+
+            return Ok(new
+            {
+                Message = "Cập nhật thông tin cá nhân thành công.",
+                User = new
+                {
+                    user.UserId,
+                    user.UserName,
+                    user.Email,
+                    user.Phone,
+                    user.UpdatedAt
+                }
+            });
+        }
+
+
     }
 }
