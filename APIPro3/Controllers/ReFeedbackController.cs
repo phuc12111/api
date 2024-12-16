@@ -52,5 +52,44 @@ namespace APIPro3.Controllers
 
             return CreatedAtAction(nameof(GetAll), new { id = reFeedback.RefeedbackId }, reFeedback);
         }
+
+
+
+        // GET: api/FeedbackWithReFeedback
+        [HttpGet("feedback-with-refeedback")]
+        public IActionResult GetFeedbackWithReFeedback()
+        {
+            var feedbacksWithReFeedback = _context.Feedbacks
+                .Select(f => new
+                {
+                    FeedbackId = f.FeedbackId,
+                    FeedbackText = f.FeedbackText,
+                    FeedbackDate = f.FeedbackDate.HasValue
+                        ? f.FeedbackDate.Value.ToString("yyyy-MM-dd HH:mm:ss")
+                        : null,
+                    f.Status,
+                    ReFeedbacks = f.ReFeedbacks.Select(rf => new
+                    {
+                        RefeedbackId = rf.RefeedbackId,
+                        RefeedbackText = rf.RefeedbackText,
+                        ReFeedbackDate = rf.RefeedbackDate.HasValue
+                            ? rf.RefeedbackDate.Value.ToString("yyyy-MM-dd HH:mm:ss")
+                            : null,
+                        rf.Status
+                    }).ToList()
+                })
+                .ToList();
+
+            // Kiểm tra nếu không có dữ liệu
+            if (!feedbacksWithReFeedback.Any())
+            {
+                return Ok(new { message = "Hiện không có phản hồi nào." });
+            }
+
+            return Ok(feedbacksWithReFeedback);
+        }
+
+
+
     }
 }
